@@ -166,4 +166,12 @@ enum {C=0,N=1,O=2,H=3,XX=4,P=5,S=6};  // see "bond_index" in the "AD4.1_bound.da
 	#define SYCL_ATOMICS_MEM_SCOPE sycl::memory_scope::device
 #endif
 
+#define SYCL_INTEL_KERNEL_ARGS_RESTRICT
+
+#ifdef SYCL_INTEL_KERNEL_ARGS_RESTRICT
+	#define SYCL_KERNEL_ARGS_RESTRICT [[intel::kernel_args_restrict]]
+#else
+	#define SYCL_KERNEL_ARGS_RESTRICT
+#endif
+
 #endif /* DEFINES_H_ */

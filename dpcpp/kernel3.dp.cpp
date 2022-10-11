@@ -418,7 +418,8 @@ void gpu_perform_LS(
                     sycl::nd_range<3>(sycl::range<3>(1, 1, blocks) *
                                           sycl::range<3>(1, 1, threads),
                                       sycl::range<3>(1, 1, threads)),
-                    [=](sycl::nd_item<3> item_ct1) {
+                    [=](sycl::nd_item<3> item_ct1)
+					SYCL_KERNEL_ARGS_RESTRICT {
                             gpu_perform_LS_kernel(
                                 pMem_conformations_next, pMem_energies_next,
                                 item_ct1, dpct_local_acc_ct1.get_pointer(),
