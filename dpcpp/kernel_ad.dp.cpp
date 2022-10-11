@@ -492,7 +492,8 @@ void gpu_gradient_minAD(
                     sycl::nd_range<3>(sycl::range<3>(1, 1, blocks) *
                                           sycl::range<3>(1, 1, threads),
                                       sycl::range<3>(1, 1, threads)),
-                    [=](sycl::nd_item<3> item_ct1) {
+                    [=](sycl::nd_item<3> item_ct1)
+					[[intel::kernel_args_restrict]] {
                             gpu_gradient_minAD_kernel(
                                 pMem_conformations_next, pMem_energies_next,
                                 item_ct1, dpct_local_acc_ct1.get_pointer(),

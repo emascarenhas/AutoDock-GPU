@@ -79,7 +79,8 @@ void gpu_sum_evals(uint32_t blocks, uint32_t threadsPerBlock)
                     sycl::nd_range<3>(sycl::range<3>(1, 1, blocks) *
                                           sycl::range<3>(1, 1, threadsPerBlock),
                                       sycl::range<3>(1, 1, threadsPerBlock)),
-                    [=](sycl::nd_item<3> item_ct1) {
+                    [=](sycl::nd_item<3> item_ct1)
+					[[intel::kernel_args_restrict]] {
                             gpu_sum_evals_kernel(
                                 item_ct1, *cData_ptr_ct1,
                                 sSum_evals_acc_ct1.get_pointer());
