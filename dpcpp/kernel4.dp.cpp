@@ -467,6 +467,16 @@ void gpu_gen_and_eval_newpops(
                                       sycl::range<3>(1, 1, threadsPerBlock)),
                     [=](sycl::nd_item<3> item_ct1) 
                     [[intel::reqd_sub_group_size(32)]] {
+
+							// Creating an RNG engine object
+							const int32_t rng_VecSize = ACTUAL_GENOTYPE_LENGTH;
+							uint64_t rng_seed = cData_ptr_ct1->pMem_prng_states[0];
+							uint64_t rng_offset = item_ct1.get_local_id(2) * rng_VecSize;
+							oneapi::mkl::rng::device::philox4x32x10<rng_VecSize> rng_engine(rng_seed, rng_offset);
+
+							// Creating an RNG distribution object
+							oneapi::mkl::rng::device::uniform<> rng_distr;
+
                             gpu_gen_and_eval_newpops_kernel(
                                 pMem_conformations_current,
                                 pMem_energies_current, pMem_conformations_next,
