@@ -29,17 +29,18 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 //#define DEBUG_ENERGY_KERNEL4
 
-//#define DOCK_TRACE
+#define DOCK_TRACE
 
 #ifdef DOCK_TRACE
 #ifdef __SYCL_DEVICE_ONLY__
-          #define CONSTANT __attribute__((opencl_constant))
+          #define CL_CONSTANT __attribute__((opencl_constant))
 #else
-          #define CONSTANT
+          #define CL_CONSTANT
 #endif
-static const CONSTANT char FMT1[] = "DOCK_TRACE: %s globalID: %6d %20s %10.6f %20s %10.6f";
+#define PRINTF(format, ...) { \
+            static const CL_CONSTANT char _format[] = format; \
+            sycl::ext::oneapi::experimental::printf(_format, ## __VA_ARGS__); }
 #endif
-
 
 void
 
@@ -60,7 +61,12 @@ gpu_gen_and_eval_newpops_kernel(
                                 float *sBestEnergy,
                                 int *sBestID,
                                 sycl::float3 *calc_coords,
-                                float *sFloatAccumulator)
+                                float *sFloatAccumulator
+								,
+								oneapi::mkl::rng::device::philox4x32x10<64>* rng_engine,
+								oneapi::mkl::rng::device::uniform<uint32_t>* rng_discrete_distr,
+								oneapi::mkl::rng::device::uniform<float>* rng_continuous_distr
+								)
 // The GPU global function
 {
 
@@ -164,12 +170,23 @@ gpu_gen_and_eval_newpops_kernel(
 		// [0..3] for parent candidates,
 		// [4..5] for binary tournaments, [6] for deciding crossover,
 		// [7..8] for crossover points, [9] for local search
+		float meme[10];
                 for (uint32_t gene_counter = item_ct1.get_local_id(2);
                      gene_counter < 10;
                      gene_counter += item_ct1.get_local_range().get(2))
                 {
                         randnums[gene_counter] = gpu_randf(cData.pMem_prng_states, item_ct1);
+						/*randnums[gene_counter]*/ meme[gene_counter] = oneapi::mkl::rng::device::generate_single(*rng_continuous_distr, *rng_engine);
                 }
+
+		item_ct1.barrier(SYCL_MEMORY_SPACE);
+		if ( (item_ct1.get_group(2) == 0) && item_ct1.get_local_id(2) == 0 ) {
+			for (uint32_t j = 0; j < 10; j++) {
+				PRINTF("%2.4f %2.4f", randnums[j], meme[j]);
+			}
+		}
+		item_ct1.barrier(SYCL_MEMORY_SPACE);
+
 #if 0
 		if ((threadIdx.x == 0) && (blockIdx.x == 1))
 		{
@@ -469,10 +486,9 @@ void gpu_gen_and_eval_newpops(
                     [[intel::reqd_sub_group_size(32)]] {
 
 							// Creating an RNG engine object
-							const int32_t rng_VecSize = ACTUAL_GENOTYPE_LENGTH;
 							uint64_t rng_seed = cData_ptr_ct1->pMem_prng_states[0];
-							uint64_t rng_offset = item_ct1.get_local_id(2) * rng_VecSize;
-							oneapi::mkl::rng::device::philox4x32x10<rng_VecSize> rng_engine(rng_seed, rng_offset);
+							uint64_t rng_offset = item_ct1.get_local_id(2) * 64;;
+							oneapi::mkl::rng::device::philox4x32x10<64> rng_engine(rng_seed, rng_offset);
 
 							// Creating a discrete RNG distribution object
 							oneapi::mkl::rng::device::uniform<uint32_t> rng_discrete_distr;
@@ -493,7 +509,12 @@ void gpu_gen_and_eval_newpops(
                                 sBestEnergy_acc_ct1.get_pointer(),
                                 sBestID_acc_ct1.get_pointer(),
                                 calc_coords_acc_ct1.get_pointer(),
-                                sFloatAccumulator_acc_ct1.get_pointer());
+                                sFloatAccumulator_acc_ct1.get_pointer()
+								,
+								&rng_engine,
+								&rng_discrete_distr,
+								&rng_continuous_distr
+								);
                     });
         });
         /*
