@@ -170,20 +170,19 @@ gpu_gen_and_eval_newpops_kernel(
 		// [0..3] for parent candidates,
 		// [4..5] for binary tournaments, [6] for deciding crossover,
 		// [7..8] for crossover points, [9] for local search
-		float meme[10];
                 for (uint32_t gene_counter = item_ct1.get_local_id(2);
                      gene_counter < 10;
                      gene_counter += item_ct1.get_local_range().get(2))
                 {
-                        randnums[gene_counter] = gpu_randf(cData.pMem_prng_states, item_ct1);
-						/*randnums[gene_counter]*/ meme[gene_counter] = oneapi::mkl::rng::device::generate_single(*rng_continuous_distr, *rng_engine);
+                        //randnums[gene_counter] = gpu_randf(cData.pMem_prng_states, item_ct1);
+						randnums[gene_counter] = oneapi::mkl::rng::device::generate_single(*rng_continuous_distr, *rng_engine);
                 }
 
 		item_ct1.barrier(SYCL_MEMORY_SPACE);
 		if ( (item_ct1.get_group(2) == 1) && (item_ct1.get_local_id(2) == 0) ) {
 			PRINTF("\nLocal work-item id: %d\n", item_ct1.get_local_id(2));
 			for (uint32_t j = 0; j < 10; j++) {
-				PRINTF("[%d]: gpu_randf=%2.4f, onemkl_rng=%2.4f\n", j, randnums[j], meme[j]);
+				PRINTF("randnums[%d]=%2.4f\n", j, randnums[j]);
 			}
 		}
 		item_ct1.barrier(SYCL_MEMORY_SPACE);
