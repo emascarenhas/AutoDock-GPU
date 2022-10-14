@@ -474,8 +474,8 @@ void gpu_gen_and_eval_newpops(
                     [[intel::reqd_sub_group_size(32)]] {
 
 							// Creating an RNG engine object
-							uint64_t rng_seed = cData_ptr_ct1->pMem_prng_states[0];
-							uint64_t rng_offset = item_ct1.get_local_id(2) * 64;;
+							uint64_t rng_seed = cData_ptr_ct1->pMem_prng_states[item_ct1.get_global_id(2)];
+							uint64_t rng_offset = item_ct1.get_local_id(2) * threadsPerBlock;
 							oneapi::mkl::rng::device::philox4x32x10<64> rng_engine(rng_seed, rng_offset);
 
 							// Creating a discrete RNG distribution object
