@@ -51,7 +51,11 @@ gpu_perform_LS_kernel(
                       int *evaluation_cnt,
                       float *offspring_energy,
                       float *sFloatAccumulator,
-                      int *entity_id)
+                      int *entity_id
+						,
+						oneapi::mkl::rng::device::philox4x32x10<64>* rng_engine,
+						oneapi::mkl::rng::device::uniform<float>* rng_continuous_distr
+)
 // The GPU global function performs local search on the pre-defined entities of conformations_next.
 // The number of blocks which should be started equals to num_of_lsentities*num_of_runs.
 // This way the first num_of_lsentities entity of each population will be subjected to local search
@@ -419,6 +423,15 @@ void gpu_perform_LS(
                                           sycl::range<3>(1, 1, threads),
                                       sycl::range<3>(1, 1, threads)),
                     [=](sycl::nd_item<3> item_ct1) {
+
+							// Creating an RNG engine object
+							uint64_t rng_seed = cData_ptr_ct1->pMem_prng_states[item_ct1.get_global_id(2)];
+							uint64_t rng_offset = item_ct1.get_local_id(2) * threads;
+							oneapi::mkl::rng::device::philox4x32x10<64> rng_engine(rng_seed, rng_offset);
+
+							// Creating a continuous RNG distribution object
+							oneapi::mkl::rng::device::uniform<float> rng_continuous_distr;
+
                             gpu_perform_LS_kernel(
                                 pMem_conformations_next, pMem_energies_next,
                                 item_ct1, dpct_local_acc_ct1.get_pointer(),
@@ -429,7 +442,11 @@ void gpu_perform_LS(
                                 evaluation_cnt_acc_ct1.get_pointer(),
                                 offspring_energy_acc_ct1.get_pointer(),
                                 sFloatAccumulator_acc_ct1.get_pointer(),
-                                entity_id_acc_ct1.get_pointer());
+                                entity_id_acc_ct1.get_pointer()
+								,
+								&rng_engine,
+								&rng_continuous_distr
+								);
                     });
         });
         /*
