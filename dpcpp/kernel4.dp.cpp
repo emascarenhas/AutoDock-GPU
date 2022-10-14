@@ -474,8 +474,11 @@ void gpu_gen_and_eval_newpops(
 							uint64_t rng_offset = item_ct1.get_local_id(2) * rng_VecSize;
 							oneapi::mkl::rng::device::philox4x32x10<rng_VecSize> rng_engine(rng_seed, rng_offset);
 
-							// Creating an RNG distribution object
-							oneapi::mkl::rng::device::uniform<> rng_distr;
+							// Creating a discrete RNG distribution object
+							oneapi::mkl::rng::device::uniform<uint32_t> rng_discrete_distr;
+
+							// Creating a continuous RNG distribution object
+							oneapi::mkl::rng::device::uniform<float> rng_continuous_distr;
 
                             gpu_gen_and_eval_newpops_kernel(
                                 pMem_conformations_current,
