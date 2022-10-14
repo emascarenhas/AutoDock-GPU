@@ -354,19 +354,15 @@ gpu_gen_and_eval_newpops_kernel(
 				if (gene_counter < 3) {
                                         offspring_genotype[gene_counter] +=
                                             cData.dockpars.abs_max_dmov *
-                                            (2.0f * gpu_randf(
-                                                        cData.pMem_prng_states,
-                                                        item_ct1) -
-                                             1.0f);
+//                                            (2.0f * gpu_randf(cData.pMem_prng_states, item_ct1) - 1.0f);
+											(2.0f * oneapi::mkl::rng::device::generate_single(*rng_continuous_distr, *rng_engine) - 1.0f);
                                 }
 				// Orientation and torsion genes
 				else {
                                         offspring_genotype[gene_counter] +=
                                             cData.dockpars.abs_max_dang *
-                                            (2.0f * gpu_randf(
-                                                        cData.pMem_prng_states,
-                                                        item_ct1) -
-                                             1.0f);
+//                                            (2.0f * gpu_randf(cData.pMem_prng_states, item_ct1) - 1.0f);
+											(2.0f * oneapi::mkl::rng::device::generate_single(*rng_continuous_distr, *rng_engine) - 1.0f);
                                         map_angle(offspring_genotype[gene_counter]);
 				}
 
