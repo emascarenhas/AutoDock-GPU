@@ -77,7 +77,7 @@ gpu_gradient_minAD_kernel(
                           int *cons_succ,
                           int *cons_fail
 						,
-						oneapi::mkl::rng::device::philox4x32x10<64>* rng_engine,
+						oneapi::mkl::rng::device::philox4x32x10<16>* rng_engine,
 						oneapi::mkl::rng::device::uniform<float>* rng_continuous_distr
 )
 // The GPU global function performs gradient-based minimization on (some) entities of conformations_next.
@@ -502,7 +502,7 @@ void gpu_gradient_minAD(
 							// Creating an RNG engine object
 							uint64_t rng_seed = cData_ptr_ct1->pMem_prng_states[item_ct1.get_global_id(2)];
 							uint64_t rng_offset = item_ct1.get_local_id(2) * threads;
-							oneapi::mkl::rng::device::philox4x32x10<64> rng_engine(rng_seed, rng_offset);
+							oneapi::mkl::rng::device::philox4x32x10<16> rng_engine(rng_seed, rng_offset);
 
 							// Creating a continuous RNG distribution object
 							oneapi::mkl::rng::device::uniform<float> rng_continuous_distr;

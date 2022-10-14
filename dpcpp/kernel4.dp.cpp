@@ -63,7 +63,7 @@ gpu_gen_and_eval_newpops_kernel(
                                 sycl::float3 *calc_coords,
                                 float *sFloatAccumulator
 								,
-								oneapi::mkl::rng::device::philox4x32x10<64>* rng_engine,
+								oneapi::mkl::rng::device::philox4x32x10<16>* rng_engine,
 								oneapi::mkl::rng::device::uniform<float>* rng_continuous_distr
 								)
 // The GPU global function
@@ -475,7 +475,7 @@ void gpu_gen_and_eval_newpops(
 							// Creating an RNG engine object
 							uint64_t rng_seed = cData_ptr_ct1->pMem_prng_states[item_ct1.get_global_id(2)];
 							uint64_t rng_offset = item_ct1.get_local_id(2) * threadsPerBlock;
-							oneapi::mkl::rng::device::philox4x32x10<64> rng_engine(rng_seed, rng_offset);
+							oneapi::mkl::rng::device::philox4x32x10<16> rng_engine(rng_seed, rng_offset);
 
 							// Creating a continuous RNG distribution object
 							oneapi::mkl::rng::device::uniform<float> rng_continuous_distr;
