@@ -347,9 +347,8 @@ gpu_gen_and_eval_newpops_kernel(
                 {
 			// Notice: dockpars_mutation_rate was scaled down to [0,1] in host
 			// to reduce number of operations in device
-                        if (/*100.0f**/ gpu_randf(cData.pMem_prng_states,
-                                                  item_ct1) <
-                            cData.dockpars.mutation_rate)
+//                        if (/*100.0f**/ gpu_randf(cData.pMem_prng_states, item_ct1) < cData.dockpars.mutation_rate)
+						if (oneapi::mkl::rng::device::generate_single(*rng_continuous_distr, *rng_engine) < cData.dockpars.mutation_rate)
                         {
 				// Translation genes
 				if (gene_counter < 3) {
