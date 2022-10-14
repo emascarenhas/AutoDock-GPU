@@ -64,7 +64,6 @@ gpu_gen_and_eval_newpops_kernel(
                                 float *sFloatAccumulator
 								,
 								oneapi::mkl::rng::device::philox4x32x10<64>* rng_engine,
-								oneapi::mkl::rng::device::uniform<uint32_t>* rng_discrete_distr,
 								oneapi::mkl::rng::device::uniform<float>* rng_continuous_distr
 								)
 // The GPU global function
@@ -478,9 +477,6 @@ void gpu_gen_and_eval_newpops(
 							uint64_t rng_offset = item_ct1.get_local_id(2) * threadsPerBlock;
 							oneapi::mkl::rng::device::philox4x32x10<64> rng_engine(rng_seed, rng_offset);
 
-							// Creating a discrete RNG distribution object
-							oneapi::mkl::rng::device::uniform<uint32_t> rng_discrete_distr;
-
 							// Creating a continuous RNG distribution object
 							oneapi::mkl::rng::device::uniform<float> rng_continuous_distr;
 
@@ -500,7 +496,6 @@ void gpu_gen_and_eval_newpops(
                                 sFloatAccumulator_acc_ct1.get_pointer()
 								,
 								&rng_engine,
-								&rng_discrete_distr,
 								&rng_continuous_distr
 								);
                     });
