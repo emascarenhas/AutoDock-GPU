@@ -65,7 +65,11 @@ gpu_gradient_minAdam_kernel(
                             GpuData cData,
                             int *entity_id,
                             float *best_energy,
-                            float *sFloatAccumulator)
+                            float *sFloatAccumulator
+						,
+						oneapi::mkl::rng::device::philox4x32x10<64>* rng_engine,
+						oneapi::mkl::rng::device::uniform<float>* rng_continuous_distr
+)
 // The GPU global function performs gradient-based minimization on (some) entities of conformations_next.
 // The number of OpenCL compute units (CU) which should be started equals to num_of_minEntities*num_of_runs.
 // This way the first num_of_lsentities entity of each population will be subjected to local search
@@ -124,7 +128,8 @@ gpu_gradient_minAdam_kernel(
                         // If entity 0 is not selected according to LS-rate,
 			// choosing another entity
                         if (100.0f *
-                                gpu_randf(cData.pMem_prng_states, item_ct1) >
+//                                gpu_randf(cData.pMem_prng_states, item_ct1) >
+								oneapi::mkl::rng::device::generate_single(*rng_continuous_distr, *rng_engine) >
                             cData.dockpars.lsearch_rate) {
                                 *entity_id =
                                     cData.dockpars
@@ -487,12 +492,25 @@ void gpu_gradient_minAdam(
                                           sycl::range<3>(1, 1, threads),
                                       sycl::range<3>(1, 1, threads)),
                     [=](sycl::nd_item<3> item_ct1) {
+
+							// Creating an RNG engine object
+							uint64_t rng_seed = cData_ptr_ct1->pMem_prng_states[item_ct1.get_global_id(2)];
+							uint64_t rng_offset = item_ct1.get_local_id(2) * threads;
+							oneapi::mkl::rng::device::philox4x32x10<64> rng_engine(rng_seed, rng_offset);
+
+							// Creating a continuous RNG distribution object
+							oneapi::mkl::rng::device::uniform<float> rng_continuous_distr;
+
                             gpu_gradient_minAdam_kernel(
                                 pMem_conformations_next, pMem_energies_next,
                                 item_ct1, dpct_local_acc_ct1.get_pointer(),
                                 *cData_ptr_ct1, entity_id_acc_ct1.get_pointer(),
                                 best_energy_acc_ct1.get_pointer(),
-                                sFloatAccumulator_acc_ct1.get_pointer());
+                                sFloatAccumulator_acc_ct1.get_pointer()
+								,
+								&rng_engine,
+								&rng_continuous_distr
+								);
                     });
         });
         /*
