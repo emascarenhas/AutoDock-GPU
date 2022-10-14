@@ -29,7 +29,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 //#define DEBUG_ENERGY_KERNEL4
 
-#define DOCK_TRACE
+//#define DOCK_TRACE
 
 #ifdef DOCK_TRACE
 #ifdef __SYCL_DEVICE_ONLY__
