@@ -178,6 +178,7 @@ gpu_gen_and_eval_newpops_kernel(
 						randnums[gene_counter] = oneapi::mkl::rng::device::generate_single(*rng_continuous_distr, *rng_engine);
                 }
 
+#if 0
 		item_ct1.barrier(SYCL_MEMORY_SPACE);
 		if ( (item_ct1.get_group(2) == 1) && (item_ct1.get_local_id(2) == 0) ) {
 			PRINTF("\nLocal work-item id: %d\n", item_ct1.get_local_id(2));
@@ -186,16 +187,8 @@ gpu_gen_and_eval_newpops_kernel(
 			}
 		}
 		item_ct1.barrier(SYCL_MEMORY_SPACE);
-
-#if 0
-		if ((threadIdx.x == 0) && (blockIdx.x == 1))
-		{
-			printf("%06d ", blockIdx.x);
-			for (int i = 0; i < 10; i++)
-				printf("%12.6f ", randnums[i]);
-			printf("\n");
-		}
 #endif
+
 		// Determining run ID
                 run_id = item_ct1.get_group(2) / cData.dockpars.pop_size;
                 /*
