@@ -89,8 +89,8 @@ gpu_perform_LS_kernel(
                         // If entity 0 is not selected according to LS-rate,
 			// choosing an other entity
                         if (100.0f *
-                                gpu_randf(cData.pMem_prng_states, item_ct1) >
-                            cData.dockpars.lsearch_rate) {
+//                                gpu_randf(cData.pMem_prng_states, item_ct1) > cData.dockpars.lsearch_rate) {
+								oneapi::mkl::rng::device::generate_single(*rng_continuous_distr, *rng_engine) > cData.dockpars.lsearch_rate) {
                                 *entity_id = cData.dockpars.num_of_lsentities;
                         }
 		}
@@ -142,11 +142,10 @@ gpu_perform_LS_kernel(
 #ifdef SWAT3
                         genotype_deviate[gene_counter] =
                             *rho *
-                            (2.0f *
-                                 gpu_randf(cData.pMem_prng_states, item_ct1) -
-                             1.0f) *
-                            (gpu_randf(cData.pMem_prng_states, item_ct1) <
-                             gene_scale);
+//                            (2.0f * gpu_randf(cData.pMem_prng_states, item_ct1) - 1.0f) *
+//                            (gpu_randf(cData.pMem_prng_states, item_ct1) < gene_scale);
+                            (2.0f * oneapi::mkl::rng::device::generate_single(*rng_continuous_distr, *rng_engine) - 1.0f) *
+                            (oneapi::mkl::rng::device::generate_single(*rng_continuous_distr, *rng_engine) < gene_scale);
 
                         // Translation genes
 			if (gene_counter < 3) {
@@ -161,7 +160,8 @@ gpu_perform_LS_kernel(
 				}
 			}
 #else
-			genotype_deviate[gene_counter] = rho*(2.0f*gpu_randf(cData.pMem_prng_states)-1.0f)*(gpu_randf(cData.pMem_prng_states)<0.3f);
+//			genotype_deviate[gene_counter] = rho*(2.0f*gpu_randf(cData.pMem_prng_states)-1.0f)*(gpu_randf(cData.pMem_prng_states)<0.3f);
+			genotype_deviate[gene_counter] = rho*(2.0f*oneapi::mkl::rng::device::generate_single(*rng_continuous_distr, *rng_engine)-1.0f)*(oneapi::mkl::rng::device::generate_single(*rng_continuous_distr, *rng_engine)<0.3f);
 
 			// Translation genes
 			if (gene_counter < 3) {
