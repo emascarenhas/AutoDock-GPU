@@ -180,10 +180,11 @@ gpu_gen_and_eval_newpops_kernel(
                 }
 
 		item_ct1.barrier(SYCL_MEMORY_SPACE);
-		if ( (item_ct1.get_group(2) == 0) && item_ct1.get_local_id(2) == 0 ) {
+		if ( (item_ct1.get_group(2) == 1) && item_ct1.get_local_id(2) == 0 ) {
 			for (uint32_t j = 0; j < 10; j++) {
-				PRINTF("%2.4f %2.4f", randnums[j], meme[j]);
+				PRINTF("[%d]: gpu_randf=%2.4f \t onemkl::rng=%2.4f", j, randnums[j], meme[j]);
 			}
+			PRINTF("\n", "");
 		}
 		item_ct1.barrier(SYCL_MEMORY_SPACE);
 
