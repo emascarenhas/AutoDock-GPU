@@ -78,7 +78,7 @@ gpu_gradient_minAD_kernel(
                           int *cons_fail
 						#if !defined (RNG_ORIGINAL)
 						,
-						RNG_ONEMKL_TYPE* rng_engine,
+						RNG_ONEMKL_ENGINE_TYPE* rng_engine,
 						oneapi::mkl::rng::device::uniform<float>* rng_continuous_distr
 						#endif
 )
@@ -508,7 +508,7 @@ void gpu_gradient_minAD(
 							// Creating an RNG engine object
 							uint64_t rng_seed = cData_ptr_ct1->pMem_prng_states[item_ct1.get_global_id(2)];
 							uint64_t rng_offset = item_ct1.get_local_id(2) * threads;
-							RNG_ONEMKL_TYPE rng_engine(rng_seed, rng_offset);
+							RNG_ONEMKL_ENGINE_TYPE rng_engine(rng_seed, rng_offset);
 
 							// Creating a continuous RNG distribution object
 							oneapi::mkl::rng::device::uniform<float> rng_continuous_distr;

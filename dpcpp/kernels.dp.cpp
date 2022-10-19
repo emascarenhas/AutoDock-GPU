@@ -39,6 +39,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 //#define RNG_ONEMKL_MCG59
 
 // Throwing error if two oneMKL RNG engine types is selected
+// If no oneMKL RNG is selected, then using original adhoc/manual RNG
 #if defined (RNG_ONEMKL_MRG32K3A) && (defined (RNG_ONEMKL_PHILOX4X32X10) || defined (RNG_ONEMKL_MCG31M1) || defined (RNG_ONEMKL_MCG59))
 	#error "RNG_ONEMKL_MRG32K3A is defined. Do not define additional ONEMKL RNG engines!"
 #elif defined (RNG_ONEMKL_PHILOX4X32X10) && (defined (RNG_ONEMKL_MRG32K3A) || defined (RNG_ONEMKL_MCG31M1) || defined (RNG_ONEMKL_MCG59))
@@ -48,20 +49,18 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #elif defined (RNG_ONEMKL_MCG59) && (defined (RNG_ONEMKL_MRG32K3A) || defined (RNG_ONEMKL_PHILOX4X32X10) || defined (RNG_ONEMKL_MCG31M1))
 	#error "RNG_ONEMKL_MCG59 is defined. Do not define additional ONEMKL RNG engines!"
 #elif !defined (RNG_ONEMKL_MRG32K3A) && !defined (RNG_ONEMKL_PHILOX4X32X10) && !defined (RNG_ONEMKL_MCG31M1) && !defined (RNG_ONEMKL_MCG59)
-//	#error "Define either RNG_ONEMKL_MRG32K3A or RNG_ONEMKL_PHILOX4X32X10 or RNG_ONEMKL_MCG31M1 or RNG_ONEMKL_MCG59"
+	#define RNG_ORIGINAL
 #endif
 
 // Defining data type for selected engine type
 #if defined (RNG_ONEMKL_MRG32K3A)
-	#define RNG_ONEMKL_TYPE	oneapi::mkl::rng::device::mrg32k3a<16>
+	#define RNG_ONEMKL_ENGINE_TYPE	oneapi::mkl::rng::device::mrg32k3a<16>
 #elif defined (RNG_ONEMKL_PHILOX4X32X10)
-	#define RNG_ONEMKL_TYPE	oneapi::mkl::rng::device::philox4x32x10<16>
+	#define RNG_ONEMKL_ENGINE_TYPE	oneapi::mkl::rng::device::philox4x32x10<16>
 #elif defined (RNG_ONEMKL_MCG31M1)
-	#define RNG_ONEMKL_TYPE oneapi::mkl::rng::device::mcg31m1<16>
+	#define RNG_ONEMKL_ENGINE_TYPE oneapi::mkl::rng::device::mcg31m1<16>
 #elif defined (RNG_ONEMKL_MCG59)
-	#define RNG_ONEMKL_TYPE oneapi::mkl::rng::device::mcg59<16>
-#else
-	#define RNG_ORIGINAL
+	#define RNG_ONEMKL_ENGINE_TYPE oneapi::mkl::rng::device::mcg59<16>
 #endif
 
 inline uint64_t llitoulli(int64_t l)
