@@ -62,9 +62,11 @@ gpu_gen_and_eval_newpops_kernel(
                                 int *sBestID,
                                 sycl::float3 *calc_coords,
                                 float *sFloatAccumulator
+								#if !defined (RNG_ORIGINAL)
 								,
 								RNG_ONEMKL_TYPE* rng_engine,
 								oneapi::mkl::rng::device::uniform<float>* rng_continuous_distr
+								#endif
 								)
 // The GPU global function
 {
@@ -173,8 +175,11 @@ gpu_gen_and_eval_newpops_kernel(
                      gene_counter < 10;
                      gene_counter += item_ct1.get_local_range().get(2))
                 {
-                        //randnums[gene_counter] = gpu_randf(cData.pMem_prng_states, item_ct1);
+						#if defined (RNG_ORIGINAL)
+                        randnums[gene_counter] = gpu_randf(cData.pMem_prng_states, item_ct1);
+						#else
 						randnums[gene_counter] = oneapi::mkl::rng::device::generate_single(*rng_continuous_distr, *rng_engine);
+						#endif
                 }
 
 #if 0
@@ -346,22 +351,31 @@ gpu_gen_and_eval_newpops_kernel(
                 {
 			// Notice: dockpars_mutation_rate was scaled down to [0,1] in host
 			// to reduce number of operations in device
-//                        if (/*100.0f**/ gpu_randf(cData.pMem_prng_states, item_ct1) < cData.dockpars.mutation_rate)
+						#if defined (RNG_ORIGINAL)
+                        if (/*100.0f**/ gpu_randf(cData.pMem_prng_states, item_ct1) < cData.dockpars.mutation_rate)
+						#else
 						if (oneapi::mkl::rng::device::generate_single(*rng_continuous_distr, *rng_engine) < cData.dockpars.mutation_rate)
+						#endif
                         {
 				// Translation genes
 				if (gene_counter < 3) {
                                         offspring_genotype[gene_counter] +=
                                             cData.dockpars.abs_max_dmov *
-//                                            (2.0f * gpu_randf(cData.pMem_prng_states, item_ct1) - 1.0f);
+											#if defined (RNG_ORIGINAL)
+                                            (2.0f * gpu_randf(cData.pMem_prng_states, item_ct1) - 1.0f);
+											#else
 											(2.0f * oneapi::mkl::rng::device::generate_single(*rng_continuous_distr, *rng_engine) - 1.0f);
+											#endif
                                 }
 				// Orientation and torsion genes
 				else {
                                         offspring_genotype[gene_counter] +=
                                             cData.dockpars.abs_max_dang *
-//                                            (2.0f * gpu_randf(cData.pMem_prng_states, item_ct1) - 1.0f);
+											#if defined (RNG_ORIGINAL)
+                                            (2.0f * gpu_randf(cData.pMem_prng_states, item_ct1) - 1.0f);
+											#else
 											(2.0f * oneapi::mkl::rng::device::generate_single(*rng_continuous_distr, *rng_engine) - 1.0f);
+											#endif
                                         map_angle(offspring_genotype[gene_counter]);
 				}
 
@@ -472,6 +486,7 @@ void gpu_gen_and_eval_newpops(
                     [=](sycl::nd_item<3> item_ct1) 
                     [[intel::reqd_sub_group_size(32)]] {
 
+							#if !defined (RNG_ORIGINAL)
 							// Creating an RNG engine object
 							uint64_t rng_seed = cData_ptr_ct1->pMem_prng_states[item_ct1.get_global_id(2)];
 							uint64_t rng_offset = item_ct1.get_local_id(2) * threadsPerBlock;
@@ -479,6 +494,7 @@ void gpu_gen_and_eval_newpops(
 
 							// Creating a continuous RNG distribution object
 							oneapi::mkl::rng::device::uniform<float> rng_continuous_distr;
+							#endif
 
                             gpu_gen_and_eval_newpops_kernel(
                                 pMem_conformations_current,
@@ -494,9 +510,11 @@ void gpu_gen_and_eval_newpops(
                                 sBestID_acc_ct1.get_pointer(),
                                 calc_coords_acc_ct1.get_pointer(),
                                 sFloatAccumulator_acc_ct1.get_pointer()
+								#if !defined (RNG_ORIGINAL)
 								,
 								&rng_engine,
 								&rng_continuous_distr
+								#endif
 								);
                     });
         });
