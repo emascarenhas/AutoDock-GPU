@@ -33,6 +33,23 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include "dpcpp_migration.h"
 #include "oneapi/mkl/rng/device.hpp"
 
+//#define RNG_ONEMKL_MRG32K3A
+//#define RNG_ONEMKL_PHILOX4X32X10
+//#define RNG_ONEMKL_MCG31M1
+#define RNG_ONEMKL_MCG59
+
+#if defined (RNG_ONEMKL_MRG32K3A) && (defined (RNG_ONEMKL_PHILOX4X32X10) || defined (RNG_ONEMKL_MCG31M1) || defined (RNG_ONEMKL_MCG59))
+	#error "RNG_ONEMKL_MRG32K3A is defined. Do not define additional ONEMKL RNG engines!"
+#elif defined (RNG_ONEMKL_PHILOX4X32X10) && (defined (RNG_ONEMKL_MRG32K3A) || defined (RNG_ONEMKL_MCG31M1) || defined (RNG_ONEMKL_MCG59))
+	#error "RNG_ONEMKL_PHILOX4X32X10 is defined. Do not define additional ONEMKL RNG engines!"
+#elif defined (RNG_ONEMKL_MCG31M1) && (defined (RNG_ONEMKL_MRG32K3A) || defined (RNG_ONEMKL_PHILOX4X32X10) || defined (RNG_ONEMKL_MCG59))
+	#error "RNG_ONEMKL_MCG31M1 is defined. Do not define additional ONEMKL RNG engines!"
+#elif defined (RNG_ONEMKL_MCG59) && (defined (RNG_ONEMKL_MRG32K3A) || defined (RNG_ONEMKL_PHILOX4X32X10) || defined (RNG_ONEMKL_MCG31M1))
+	#error "RNG_ONEMKL_MCG59 is defined. Do not define additional ONEMKL RNG engines!"
+#elif !defined (RNG_ONEMKL_MRG32K3A) && !defined (RNG_ONEMKL_PHILOX4X32X10) && !defined (RNG_ONEMKL_MCG31M1) && !defined (RNG_ONEMKL_MCG59)
+	#error "Define either RNG_ONEMKL_MRG32K3A or RNG_ONEMKL_PHILOX4X32X10 or RNG_ONEMKL_MCG31M1 or RNG_ONEMKL_MCG59"
+#endif
+
 inline uint64_t llitoulli(int64_t l)
 {
 	uint64_t u;
