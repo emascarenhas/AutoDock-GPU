@@ -63,15 +63,7 @@ gpu_gen_and_eval_newpops_kernel(
                                 sycl::float3 *calc_coords,
                                 float *sFloatAccumulator
 								,
-								#if defined(RNG_ONEMKL_MRG32K3A)
-								oneapi::mkl::rng::device::mrg32k3a<16>* rng_engine,
-								#elif defined (RNG_ONEMKL_PHILOX4X32X10)
-								oneapi::mkl::rng::device::philox4x32x10<16>* rng_engine,
-								#elif defined (RNG_ONEMKL_MCG31M1)
-								oneapi::mkl::rng::device::mcg31m1<16>* rng_engine,
-								#elif defined (RNG_ONEMKL_MCG59)
-								oneapi::mkl::rng::device::mcg59<16>* rng_engine,
-								#endif
+								RNG_ONEMKL_TYPE* rng_engine,
 								oneapi::mkl::rng::device::uniform<float>* rng_continuous_distr
 								)
 // The GPU global function
@@ -483,15 +475,7 @@ void gpu_gen_and_eval_newpops(
 							// Creating an RNG engine object
 							uint64_t rng_seed = cData_ptr_ct1->pMem_prng_states[item_ct1.get_global_id(2)];
 							uint64_t rng_offset = item_ct1.get_local_id(2) * threadsPerBlock;
-							#if defined (RNG_ONEMKL_MRG32K3A)
-							oneapi::mkl::rng::device::mrg32k3a<16> rng_engine(rng_seed, rng_offset);
-							#elif defined (RNG_ONEMKL_PHILOX4X32X10)
-							oneapi::mkl::rng::device::philox4x32x10<16> rng_engine(rng_seed, rng_offset);
-							#elif defined (RNG_ONEMKL_MCG31M1)
-							oneapi::mkl::rng::device::mcg31m1<16> rng_engine(rng_seed, rng_offset);
-							#elif defined (RNG_ONEMKL_MCG59)
-							oneapi::mkl::rng::device::mcg59<16> rng_engine(rng_seed, rng_offset);
-							#endif
+							RNG_ONEMKL_TYPE rng_engine(rng_seed, rng_offset);
 
 							// Creating a continuous RNG distribution object
 							oneapi::mkl::rng::device::uniform<float> rng_continuous_distr;
