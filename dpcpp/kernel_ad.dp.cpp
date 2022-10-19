@@ -76,9 +76,11 @@ gpu_gradient_minAD_kernel(
                           float *rho,
                           int *cons_succ,
                           int *cons_fail
+						#if !defined (RNG_ORIGINAL)
 						,
-						oneapi::mkl::rng::device::philox4x32x10<16>* rng_engine,
+						RNG_ONEMKL_TYPE* rng_engine,
 						oneapi::mkl::rng::device::uniform<float>* rng_continuous_distr
+						#endif
 )
 // The GPU global function performs gradient-based minimization on (some) entities of conformations_next.
 // The number of OpenCL compute units (CU) which should be started equals to num_of_minEntities*num_of_runs.
@@ -137,8 +139,11 @@ gpu_gradient_minAD_kernel(
                         // If entity 0 is not selected according to LS-rate,
 			// choosing another entity
                         if (100.0f *
-//                                gpu_randf(cData.pMem_prng_states, item_ct1) >
+								#if defined (RNG_ORIGINAL)
+                                gpu_randf(cData.pMem_prng_states, item_ct1) >
+								#else
 								oneapi::mkl::rng::device::generate_single(*rng_continuous_distr, *rng_engine) >
+								#endif
                             cData.dockpars.lsearch_rate) {
                                 *entity_id =
                                     cData.dockpars
@@ -499,13 +504,15 @@ void gpu_gradient_minAD(
                                       sycl::range<3>(1, 1, threads)),
                     [=](sycl::nd_item<3> item_ct1) {
 
+							#if !defined (RNG_ORIGINAL)
 							// Creating an RNG engine object
 							uint64_t rng_seed = cData_ptr_ct1->pMem_prng_states[item_ct1.get_global_id(2)];
 							uint64_t rng_offset = item_ct1.get_local_id(2) * threads;
-							oneapi::mkl::rng::device::philox4x32x10<16> rng_engine(rng_seed, rng_offset);
+							RNG_ONEMKL_TYPE rng_engine(rng_seed, rng_offset);
 
 							// Creating a continuous RNG distribution object
 							oneapi::mkl::rng::device::uniform<float> rng_continuous_distr;
+							#endif
 
                             gpu_gradient_minAD_kernel(
                                 pMem_conformations_next, pMem_energies_next,
@@ -516,9 +523,11 @@ void gpu_gradient_minAD(
                                 rho_acc_ct1.get_pointer(),
                                 cons_succ_acc_ct1.get_pointer(),
                                 cons_fail_acc_ct1.get_pointer()
+								#if !defined (RNG_ORIGINAL)
 								,
 								&rng_engine,
 								&rng_continuous_distr
+								#endif
 								);
                     });
         });
