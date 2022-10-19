@@ -52,7 +52,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 	#define RNG_ORIGINAL
 #endif
 
-// Defining data type for selected engine type
+// Defining data type for selected oneMKL RNG engine type
 #if defined (RNG_ONEMKL_MRG32K3A)
 	#define RNG_ONEMKL_ENGINE_TYPE	oneapi::mkl::rng::device::mrg32k3a<16>
 #elif defined (RNG_ONEMKL_PHILOX4X32X10)
@@ -61,6 +61,11 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 	#define RNG_ONEMKL_ENGINE_TYPE oneapi::mkl::rng::device::mcg31m1<16>
 #elif defined (RNG_ONEMKL_MCG59)
 	#define RNG_ONEMKL_ENGINE_TYPE oneapi::mkl::rng::device::mcg59<16>
+#endif
+
+// Defining data type for oneMKL RNG distribution type
+#if !defined (RNG_ORIGINAL)
+	#define RNG_ONEMKL_DISTRIBUTION_TYPE oneapi::mkl::rng::device::uniform<float>
 #endif
 
 inline uint64_t llitoulli(int64_t l)

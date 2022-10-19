@@ -55,7 +55,7 @@ gpu_perform_LS_kernel(
 						#if !defined (RNG_ORIGINAL)
 						,
 						RNG_ONEMKL_ENGINE_TYPE* rng_engine,
-						oneapi::mkl::rng::device::uniform<float>* rng_continuous_distr
+						RNG_ONEMKL_DISTRIBUTION_TYPE* rng_continuous_distr
 						#endif
 )
 // The GPU global function performs local search on the pre-defined entities of conformations_next.
@@ -442,7 +442,7 @@ void gpu_perform_LS(
 							RNG_ONEMKL_ENGINE_TYPE rng_engine(rng_seed, rng_offset);
 
 							// Creating a continuous RNG distribution object
-							oneapi::mkl::rng::device::uniform<float> rng_continuous_distr;
+							RNG_ONEMKL_DISTRIBUTION_TYPE rng_continuous_distr;
 							#endif
 
                             gpu_perform_LS_kernel(
