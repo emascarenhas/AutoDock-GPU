@@ -33,13 +33,14 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #ifdef DOCK_TRACE
 #ifdef __SYCL_DEVICE_ONLY__
-          #define CONSTANT __attribute__((opencl_constant))
+          #define CL_CONSTANT __attribute__((opencl_constant))
 #else
-          #define CONSTANT
+          #define CL_CONSTANT
 #endif
-static const CONSTANT char FMT1[] = "DOCK_TRACE: %s globalID: %6d %20s %10.6f %20s %10.6f";
+#define PRINTF(format, ...) { \
+            static const CL_CONSTANT char _format[] = format; \
+            sycl::ext::oneapi::experimental::printf(_format, ## __VA_ARGS__); }
 #endif
-
 
 void
 
@@ -60,7 +61,13 @@ gpu_gen_and_eval_newpops_kernel(
                                 float *sBestEnergy,
                                 int *sBestID,
                                 sycl::float3 *calc_coords,
-                                float *sFloatAccumulator)
+                                float *sFloatAccumulator
+								#if !defined (RNG_ORIGINAL)
+								,
+								RNG_ONEMKL_ENGINE_TYPE* rng_engine,
+								RNG_ONEMKL_DISTRIBUTION_TYPE* rng_continuous_distr
+								#endif
+								)
 // The GPU global function
 {
 
@@ -168,17 +175,24 @@ gpu_gen_and_eval_newpops_kernel(
                      gene_counter < 10;
                      gene_counter += item_ct1.get_local_range().get(2))
                 {
+						#if defined (RNG_ORIGINAL)
                         randnums[gene_counter] = gpu_randf(cData.pMem_prng_states, item_ct1);
+						#else
+						randnums[gene_counter] = oneapi::mkl::rng::device::generate_single(*rng_continuous_distr, *rng_engine);
+						#endif
                 }
+
 #if 0
-		if ((threadIdx.x == 0) && (blockIdx.x == 1))
-		{
-			printf("%06d ", blockIdx.x);
-			for (int i = 0; i < 10; i++)
-				printf("%12.6f ", randnums[i]);
-			printf("\n");
+		item_ct1.barrier(SYCL_MEMORY_SPACE);
+		if ( (item_ct1.get_group(2) == 1) && (item_ct1.get_local_id(2) == 0) ) {
+			PRINTF("\nLocal work-item id: %d\n", item_ct1.get_local_id(2));
+			for (uint32_t j = 0; j < 10; j++) {
+				PRINTF("randnums[%d]=%2.4f\n", j, randnums[j]);
+			}
 		}
+		item_ct1.barrier(SYCL_MEMORY_SPACE);
 #endif
+
 		// Determining run ID
                 run_id = item_ct1.get_group(2) / cData.dockpars.pop_size;
                 /*
@@ -337,27 +351,31 @@ gpu_gen_and_eval_newpops_kernel(
                 {
 			// Notice: dockpars_mutation_rate was scaled down to [0,1] in host
 			// to reduce number of operations in device
-                        if (/*100.0f**/ gpu_randf(cData.pMem_prng_states,
-                                                  item_ct1) <
-                            cData.dockpars.mutation_rate)
+						#if defined (RNG_ORIGINAL)
+                        if (/*100.0f**/ gpu_randf(cData.pMem_prng_states, item_ct1) < cData.dockpars.mutation_rate)
+						#else
+						if (oneapi::mkl::rng::device::generate_single(*rng_continuous_distr, *rng_engine) < cData.dockpars.mutation_rate)
+						#endif
                         {
 				// Translation genes
 				if (gene_counter < 3) {
                                         offspring_genotype[gene_counter] +=
                                             cData.dockpars.abs_max_dmov *
-                                            (2.0f * gpu_randf(
-                                                        cData.pMem_prng_states,
-                                                        item_ct1) -
-                                             1.0f);
+											#if defined (RNG_ORIGINAL)
+                                            (2.0f * gpu_randf(cData.pMem_prng_states, item_ct1) - 1.0f);
+											#else
+											(2.0f * oneapi::mkl::rng::device::generate_single(*rng_continuous_distr, *rng_engine) - 1.0f);
+											#endif
                                 }
 				// Orientation and torsion genes
 				else {
                                         offspring_genotype[gene_counter] +=
                                             cData.dockpars.abs_max_dang *
-                                            (2.0f * gpu_randf(
-                                                        cData.pMem_prng_states,
-                                                        item_ct1) -
-                                             1.0f);
+											#if defined (RNG_ORIGINAL)
+                                            (2.0f * gpu_randf(cData.pMem_prng_states, item_ct1) - 1.0f);
+											#else
+											(2.0f * oneapi::mkl::rng::device::generate_single(*rng_continuous_distr, *rng_engine) - 1.0f);
+											#endif
                                         map_angle(offspring_genotype[gene_counter]);
 				}
 
@@ -445,6 +463,17 @@ void gpu_gen_and_eval_newpops(
                                       sycl::range<3>(1, 1, threadsPerBlock)),
                     [=](sycl::nd_item<3> item_ct1) 
                     [[intel::reqd_sub_group_size(32)]] {
+
+							#if !defined (RNG_ORIGINAL)
+							// Creating an RNG engine object
+							uint64_t rng_seed = cData_ptr_ct1->pMem_prng_states[item_ct1.get_global_id(2)];
+							uint64_t rng_offset = item_ct1.get_local_id(2) * threadsPerBlock;
+							RNG_ONEMKL_ENGINE_TYPE rng_engine(rng_seed, rng_offset);
+
+							// Creating a continuous RNG distribution object
+							RNG_ONEMKL_DISTRIBUTION_TYPE rng_continuous_distr;
+							#endif
+
                             gpu_gen_and_eval_newpops_kernel(
                                 pMem_conformations_current,
                                 pMem_energies_current, pMem_conformations_next,
@@ -458,7 +487,13 @@ void gpu_gen_and_eval_newpops(
                                 sBestEnergy_acc_ct1.get_pointer(),
                                 sBestID_acc_ct1.get_pointer(),
                                 calc_coords_acc_ct1.get_pointer(),
-                                sFloatAccumulator_acc_ct1.get_pointer());
+                                sFloatAccumulator_acc_ct1.get_pointer()
+								#if !defined (RNG_ORIGINAL)
+								,
+								&rng_engine,
+								&rng_continuous_distr
+								#endif
+								);
                     });
         });
         /*

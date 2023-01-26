@@ -51,7 +51,13 @@ gpu_perform_LS_kernel(
                       int *evaluation_cnt,
                       float *offspring_energy,
                       float *sFloatAccumulator,
-                      int *entity_id)
+                      int *entity_id
+						#if !defined (RNG_ORIGINAL)
+						,
+						RNG_ONEMKL_ENGINE_TYPE* rng_engine,
+						RNG_ONEMKL_DISTRIBUTION_TYPE* rng_continuous_distr
+						#endif
+)
 // The GPU global function performs local search on the pre-defined entities of conformations_next.
 // The number of blocks which should be started equals to num_of_lsentities*num_of_runs.
 // This way the first num_of_lsentities entity of each population will be subjected to local search
@@ -85,8 +91,11 @@ gpu_perform_LS_kernel(
                         // If entity 0 is not selected according to LS-rate,
 			// choosing an other entity
                         if (100.0f *
-                                gpu_randf(cData.pMem_prng_states, item_ct1) >
-                            cData.dockpars.lsearch_rate) {
+								#if defined (RNG_ORIGINAL)
+                                gpu_randf(cData.pMem_prng_states, item_ct1) > cData.dockpars.lsearch_rate) {
+								#else
+								oneapi::mkl::rng::device::generate_single(*rng_continuous_distr, *rng_engine) > cData.dockpars.lsearch_rate) {
+								#endif
                                 *entity_id = cData.dockpars.num_of_lsentities;
                         }
 		}
@@ -138,11 +147,13 @@ gpu_perform_LS_kernel(
 #ifdef SWAT3
                         genotype_deviate[gene_counter] =
                             *rho *
-                            (2.0f *
-                                 gpu_randf(cData.pMem_prng_states, item_ct1) -
-                             1.0f) *
-                            (gpu_randf(cData.pMem_prng_states, item_ct1) <
-                             gene_scale);
+							#if defined (RNG_ORIGINAL)
+                            (2.0f * gpu_randf(cData.pMem_prng_states, item_ct1) - 1.0f) *
+                            (gpu_randf(cData.pMem_prng_states, item_ct1) < gene_scale);
+							#else
+                            (2.0f * oneapi::mkl::rng::device::generate_single(*rng_continuous_distr, *rng_engine) - 1.0f) *
+                            (oneapi::mkl::rng::device::generate_single(*rng_continuous_distr, *rng_engine) < gene_scale);
+							#endif
 
                         // Translation genes
 			if (gene_counter < 3) {
@@ -157,7 +168,11 @@ gpu_perform_LS_kernel(
 				}
 			}
 #else
+			#if defined (RNG_ORIGINAL)
 			genotype_deviate[gene_counter] = rho*(2.0f*gpu_randf(cData.pMem_prng_states)-1.0f)*(gpu_randf(cData.pMem_prng_states)<0.3f);
+			#else
+			genotype_deviate[gene_counter] = rho*(2.0f*oneapi::mkl::rng::device::generate_single(*rng_continuous_distr, *rng_engine)-1.0f)*(oneapi::mkl::rng::device::generate_single(*rng_continuous_distr, *rng_engine)<0.3f);
+			#endif
 
 			// Translation genes
 			if (gene_counter < 3) {
@@ -401,6 +416,17 @@ void gpu_perform_LS(
                                           sycl::range<3>(1, 1, threads),
                                       sycl::range<3>(1, 1, threads)),
                     [=](sycl::nd_item<3> item_ct1) {
+
+							#if !defined (RNG_ORIGINAL)
+							// Creating an RNG engine object
+							uint64_t rng_seed = cData_ptr_ct1->pMem_prng_states[item_ct1.get_global_id(2)];
+							uint64_t rng_offset = item_ct1.get_local_id(2) * threads;
+							RNG_ONEMKL_ENGINE_TYPE rng_engine(rng_seed, rng_offset);
+
+							// Creating a continuous RNG distribution object
+							RNG_ONEMKL_DISTRIBUTION_TYPE rng_continuous_distr;
+							#endif
+
                             gpu_perform_LS_kernel(
                                 pMem_conformations_next, pMem_energies_next,
                                 item_ct1, dpct_local_acc_ct1.get_pointer(),
@@ -411,7 +437,13 @@ void gpu_perform_LS(
                                 evaluation_cnt_acc_ct1.get_pointer(),
                                 offspring_energy_acc_ct1.get_pointer(),
                                 sFloatAccumulator_acc_ct1.get_pointer(),
-                                entity_id_acc_ct1.get_pointer());
+                                entity_id_acc_ct1.get_pointer()
+								#if !defined (RNG_ORIGINAL)
+								,
+								&rng_engine,
+								&rng_continuous_distr
+								#endif
+								);
                     });
         });
         /*
