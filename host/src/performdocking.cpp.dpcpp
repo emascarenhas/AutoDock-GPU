@@ -796,6 +796,9 @@ int docking_with_gpu(const Gridinfo *mygrid, Dockpars *mypars,
 	blocksPerGridForEachEntity = mypars->pop_size * mypars->num_of_runs;
 	blocksPerGridForEachRun = mypars->num_of_runs;
 
+	int SYCL_subgroup_size = NUM_OF_THREADS_PER_SYCL_SUBGROUP;
+	printf("\n    SYCL Work-group Size: %u\n    SYCL Subgroup Size: %u\n\n", threadsPerBlock, NUM_OF_THREADS_PER_SYCL_SUBGROUP);fflush(stdout);
+
 	// allocating CPU memory for initial populations
 	size_populations = mypars->num_of_runs * mypars->pop_size * GENOTYPE_LENGTH_IN_GLOBMEM*sizeof(float);
 	sim_state.cpu_populations.resize(size_populations);
