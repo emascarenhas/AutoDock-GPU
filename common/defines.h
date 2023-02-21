@@ -27,30 +27,46 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #ifndef DEFINES_H_
 #define DEFINES_H_
 
+/*
+	Using clinfo output to define reasonable SYCL subgroup sizes:
+	Sub-group sizes (Intel) 4, 8, 16, 32, 64
+*/
 #if defined (N1WI)
 	#define NUM_OF_THREADS_PER_BLOCK 1
+	// Min. subgroup size = 4. Here it doesn't make sense to define it
 #elif defined (N2WI)
 	#define NUM_OF_THREADS_PER_BLOCK 2
+	// Min. subgroup size = 4. Here it doesn't make sense to define it
 #elif defined (N4WI)
 	#define NUM_OF_THREADS_PER_BLOCK 4
+	#define NUM_OF_THREADS_PER_SYCL_SUBGROUP 4
 #elif defined (N8WI)
 	#define NUM_OF_THREADS_PER_BLOCK 8
+	#define NUM_OF_THREADS_PER_SYCL_SUBGROUP (NUM_OF_THREADS_PER_BLOCK/2)
 #elif defined (N16WI)
 	#define NUM_OF_THREADS_PER_BLOCK 16
+	#define NUM_OF_THREADS_PER_SYCL_SUBGROUP (NUM_OF_THREADS_PER_BLOCK/2)
 #elif defined (N32WI)
 	#define NUM_OF_THREADS_PER_BLOCK 32
+	#define NUM_OF_THREADS_PER_SYCL_SUBGROUP (NUM_OF_THREADS_PER_BLOCK/2)
 #elif defined (N64WI)
 	#define NUM_OF_THREADS_PER_BLOCK 64
+	#define NUM_OF_THREADS_PER_SYCL_SUBGROUP (NUM_OF_THREADS_PER_BLOCK/2)
 #elif defined (N128WI)
 	#define NUM_OF_THREADS_PER_BLOCK 128
+	#define NUM_OF_THREADS_PER_SYCL_SUBGROUP (NUM_OF_THREADS_PER_BLOCK/2)
 #elif defined (N256WI)
 	#define NUM_OF_THREADS_PER_BLOCK 256
+	#define NUM_OF_THREADS_PER_SYCL_SUBGROUP 4
 #elif defined (N512WI)
 	#define NUM_OF_THREADS_PER_BLOCK 512
+	#define NUM_OF_THREADS_PER_SYCL_SUBGROUP 4
 #elif defined (N1024WI)
 	#define NUM_OF_THREADS_PER_BLOCK 1024
+	#define NUM_OF_THREADS_PER_SYCL_SUBGROUP 4
 #else
 	#define NUM_OF_THREADS_PER_BLOCK 16
+	#define NUM_OF_THREADS_PER_SYCL_SUBGROUP 4
 #endif
 
 typedef enum
